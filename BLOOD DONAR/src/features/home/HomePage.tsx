@@ -154,4 +154,7 @@ export const HomePage: React.FC = () => {
 
           <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-[#C81E3B] group-hover:translate-x-0.5 transition-all" />
         </div>
-      <
+      </section>
+    </div>
+  );
+};
