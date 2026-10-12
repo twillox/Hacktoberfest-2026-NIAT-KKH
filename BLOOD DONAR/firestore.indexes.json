@@ -1,0 +1,29 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "emergencies",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "emergencyResponses",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "emergencyId", "order": "ASCENDING" },
+        { "fieldPath": "responseStatus", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "donorProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "bloodGroup", "order": "ASCENDING" },
+        { "fieldPath": "availabilityStatus", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

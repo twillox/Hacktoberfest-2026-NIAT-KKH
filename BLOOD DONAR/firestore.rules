@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions for security and role enforcement
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isCoordinator() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'coordinator' || 
+        request.auth.token.role == 'admin' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['coordinator', 'admin'])
+      );
+    }
+
+    // 1. User accounts: users can only manage their own profile
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId);
+      // Users cannot elevate their own roles in Firestore
+      allow update: if isOwner(userId) && 
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['roles', 'accountStatus']));
+      allow delete: if isOwner(userId) || isCoordinator();
+    }
+
+    // 2. Donor profiles: strict privacy, no public scraping of donor locations or phone numbers
+    match /donorProfiles/{userId} {
+      allow read: if isOwner(userId) || isCoordinator();
+      allow create, update: if isOwner(userId);
+      allow delete: if isOwner(userId) || isCoordinator();
+    }
+
+    // 3. Blood banks: public read for discovery, admin/coordinator write only
+    match /bloodBanks/{bloodBankId} {
+      allow read: if true;
+      allow write: if isCoordinator();
+    }
+
+    // 4. Emergency requests: strict requester & coordinator access
+    match /emergencies/{emergencyId} {
+      // Requesters can read their own emergency, coordinators can read all, 
+      // or authenticated donors responding to this emergency
+      allow read: if isAuthenticated() && (
+        resource.data.requesterId == request.auth.uid || 
+        isCoordinator()
+      );
+      
+      // Creating emergency: user must be authenticated and set requesterId to self
+      allow create: if isAuthenticated() && request.resource.data.requesterId == request.auth.uid;
+      
+      // Updating: requester can cancel or update fields; coordinator can update status
+      allow update: if isAuthenticated() && (
+        (resource.data.requesterId == request.auth.uid && 
+          request.resource.data.requesterId == resource.data.requesterId) || 
+        isCoordinator()
+      );
+      
+      allow delete: if isCoordinator();
+    }
+
+    // 5. Emergency responses: donor response state
+    match /emergencyResponses/{responseId} {
+      allow read: if isAuthenticated() && (
+        resource.data.donorId == request.auth.uid ||
+        get(/databases/$(database)/documents/emergencies/$(resource.data.emergencyId)).data.requesterId == request.auth.uid ||
+        isCoordinator()
+      );
+      allow create: if isAuthenticated() && request.resource.data.donorId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.donorId == request.auth.uid || isCoordinator()
+      );
+      allow delete: if isCoordinator();
+    }
+
+    // 6. Notification jobs: backend & coordinator inspection only
+    match /notificationJobs/{jobId} {
+      allow read: if isCoordinator();
+      allow write: if isCoordinator();
+    }
+
+    // 7. Audit events: tamper-proof log, read-only for coordinators
+    match /auditEvents/{eventId} {
+      allow read: if isCoordinator();
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // Immutable audit log
+    }
+  }
+}

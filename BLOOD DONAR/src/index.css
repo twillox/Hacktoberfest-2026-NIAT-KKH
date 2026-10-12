@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-crimson: #e11d48;
+    --color-crimson-dark: #be123c;
+    --color-surface: #fdfbf9;
+  }
+  
+  body {
+    @apply bg-[#FAF7F5] text-stone-900 font-sans antialiased min-h-screen;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Custom smooth transitions & animations */
+@keyframes heartBeat {
+  0% { transform: scale(1); }
+  14% { transform: scale(1.15); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.15); }
+  70% { transform: scale(1); }
+}
+
+.animate-heart-beat {
+  animation: heartBeat 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Subtle glow for emergency badges */
+.crimson-glow {
+  box-shadow: 0 0 15px -3px rgba(225, 29, 72, 0.25);
+}
+
+/* Leaflet map container adjustments */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  border-radius: 1.25rem;
+  z-index: 10;
+}
+
+/* Hide scrollbar for clean horizontal chips */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
